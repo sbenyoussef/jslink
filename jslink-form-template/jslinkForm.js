@@ -1,8 +1,29 @@
 var TechPoint = TechPoint || {};
-TechPoint.customForm = function(){
+TechPoint.customJsLinkForm = function(){
   var _formHtml = "";
   var _formBaseUrl = _spPageContextInfo.webServerRelativeUrl + "/SiteAssets/myCustomForm/";
+  var _postFields=0;
+  var _formId: "TechPointCustomForm",
  
+  _initNewEditForm: function (ctx)
+  {
+    //in my html form all span with class TechPointCustomForm will be replace by sharepoint form input
+    var elts = document.querySelectorAll("span.TechPointCustomForm");
+      var nodeListLength = elts.length;
+     var form = document.querySelector("table.ms-formtable");
+        for (var i = 0; i < nodeListLength; i++) {
+            //32 chars max for field id in aspx page
+           var fieldName = elts[i].getAttribute("data-fieldname").substr(0, 32);
+           var formInput = form.querySelector("[id^='" + fieldName + "_']");
+           if (!formInput)
+                        continue;
+                }
+  };
+
+  _initDisplayForm: function ()
+  {
+  };   
+  
   _onPreRender = function(ctx){
   //if we can parse the BaseViewID it means that we are on list view
   //we don't need to apply custom form on views for this example
@@ -27,15 +48,33 @@ TechPoint.customForm = function(){
                 _formHtml = this.response;
                 customForm.id = "TechPointCustomForm";
                 customForm.innerHTML = _formHtml;
-                //replace custom form input element by sharepoint form input
+                //inser custom form before sharepoint form
                 defaultForm.insertAdjacentElement("beforebegin", customForm);
             }
         };
         xhttp.open("GET", formUrl, false);
         xhttp.send();
 };
-
+  
 _onPostRender = function(ctx){
+  if (parseInt(ctx.BaseViewID))
+    return;
+     //in dispform,newform and edit form, onPostRender is called after each field has been rendered
+        //this piece of code is to ensure that the post render function is executed only once
+  _postfields++;
+  if (RiskBaseForm.FormTemplate.postfields < Object.keys(ctx.Templates.Fields).length) {
+        return;
+   }
+   if (ctx.ControlMode === SPClientTemplates.ClientControlMode.EditForm || ctx.ControlMode === SPClientTemplates.ClientControlMode.NewForm) {
+       _initNewEditForm(ctx);
+   }
+   else {
+      _initDisplayForm();
+        }
+  
+    //form logic (not in list view)
+    var myForm = new TechPoint.customForm(ctx);
+    myForm.run();
 };
 
 _run = function(){
@@ -57,5 +96,5 @@ _run = function(){
 };
 
 //Run the jslink
-var myForm = new TechPoint.customForm();
-myForm.run();
+var myJsLinkForm = new TechPoint.customJsLinkForm();
+myJsLinkForm.run();
